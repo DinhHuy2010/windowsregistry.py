@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "windowsregistry.py"
+version = "0.0.2"
+description = "Windows Registry Editor with Pythonic interface"
+authors = ["DinhHuy2010 <huy04052010@outlook.com>"]
+readme = "README.md"
+packages = [{include = "windowsregistry"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

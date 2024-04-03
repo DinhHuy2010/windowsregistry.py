@@ -1,0 +1,2 @@
+class WindowsRegistryError(Exception):
+    pass
