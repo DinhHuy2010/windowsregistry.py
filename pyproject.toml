@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "windowsregistry.py"
-version = "0.0.1"
+version = "0.0.2"
 description = "Windows Registry Editor with Pythonic interface"
 authors = ["DinhHuy2010 <huy04052010@outlook.com>"]
 readme = "README.md"
