@@ -6,6 +6,7 @@ authors = ["DinhHuy2010 <huy04052010@outlook.com>"]
 readme = "README.md"
 packages = [{include = "windowsregistry"}]
 homepage = "https://github.com/DinhHuy2010/windowsregistry.py"
+license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.10"
