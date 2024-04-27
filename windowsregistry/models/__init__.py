@@ -8,7 +8,8 @@ from .data import (
     RegistryInfoKey,
     RegistryValue,
     RegistryValueType,
-    RegistryPermissionConfig
+    RegistryPermissionConfig,
+    RegistrySize
 )
 
 __all__ = [
@@ -17,6 +18,7 @@ __all__ = [
     "RegistryAlternateViewType",
     "RegistryValueType",
     "RegistryPermissionConfig",
+    "RegistrySize",
     "OtherRegistryType",
     "RegistryInfoKey",
     "RegistryValue",

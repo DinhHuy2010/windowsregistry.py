@@ -1,8 +1,8 @@
 from collections import deque
 from typing import Any, Iterator, Optional, Sequence, Union
 
-from windowsregistry.regpath import RegistryPathString
 
+from .regpath import RegistryPathString
 from ._backend import WindowsRegistryHandler
 from .errors import WindowsRegistryError
 from .models import (
@@ -10,6 +10,8 @@ from .models import (
     RegistryKeyPermissionType,
     RegistryValue,
     RegistryValueType,
+    RegistryInfoKey,
+    RegistrySize
 )
 
 
@@ -55,6 +57,10 @@ class RegistryPath:
     @property
     def regpath(self) -> RegistryPathString:
         return self._backend._regpath
+
+    @property
+    def query_info(self) -> RegistryInfoKey:
+        return self._backend.winreg_query
 
     @property
     def parent(self) -> "RegistryPath":
@@ -132,6 +138,18 @@ class RegistryPath:
             values_in_curr = tuple(curr.values())
             yield curr, subkeys_in_curr, values_in_curr
             stacks.extend(subkeys_in_curr)
+
+    def sizeof(self) -> RegistrySize:
+        cached = getattr(self, "__cached_sizeof", None)
+        if cached is not None:
+            return cached
+        sub, val = 0, 0
+        for r, _, _ in self.traverse():
+            sub += r.query_info.total_subkeys
+            val += r.query_info.total_values
+        final = RegistrySize(self.regpath, sub, val)
+        setattr(self, "__cached_sizeof", final)
+        return final
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.regpath.fullpath} at {hex(id(self))}>"
