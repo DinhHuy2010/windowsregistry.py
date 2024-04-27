@@ -8,4 +8,8 @@ def get_permission_int(
         alttype = RegistryAlternateViewType.KEY_WOW64_32KEY
     else:
         alttype = RegistryAlternateViewType.KEY_WOW64_64KEY
-    return permconf.permission.value | alttype.value
+    fr, *rn = permconf.permissions
+    v = fr.value
+    for r in rn:
+        v |= r.value
+    return v | alttype.value

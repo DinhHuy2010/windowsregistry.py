@@ -76,7 +76,7 @@ class RegistryPathString:
         return self.__class__(*parts, root_key=self.root_key)
     
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.fullpath})"
+        return f"{self.__class__.__name__}({self.fullpath!r})"
     
     def __str__(self) -> str:
         return self.fullpath

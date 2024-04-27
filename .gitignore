@@ -1,5 +1,6 @@
 misc/
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
 dist/
+.vscode/
