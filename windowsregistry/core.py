@@ -36,7 +36,7 @@ class RegistryPath:
             (
                 perm
                 if perm is not None
-                else self._backend._ll._permconf.permission
+                else self._backend._ll._permconf.permissions
             ),
             (
                 w64

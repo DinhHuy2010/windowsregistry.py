@@ -23,7 +23,7 @@ class WindowsRegistryHandler:
         subkey: Union[str, Sequence[str], None] = None,
         *,
         root_key: Optional[RegistryHKEYEnum] = None,
-        permission: Optional[RegistryKeyPermissionType] = None,
+        permission: Optional[Union[RegistryKeyPermissionType, Sequence[RegistryKeyPermissionType]]] = None,
         wow64_32key_access: bool = False,
     ) -> None:
         if subkey is None:
@@ -32,10 +32,13 @@ class WindowsRegistryHandler:
             subkey = [subkey]
         if permission is None:
             permission = RegistryKeyPermissionType.KEY_READ
+        if isinstance(permission, RegistryKeyPermissionType):
+            permission = [permission]
         self._regpath = RegistryPathString(*subkey, root_key=root_key)
         self._ll = lowlevel(
             permconf=RegistryPermissionConfig(
-                permission=permission, wow64_32key_access=wow64_32key_access
+                permissions=tuple(permission),
+                wow64_32key_access=wow64_32key_access
             )
         )
         self._winreg_handler = self._ll.open_subkey(
@@ -71,7 +74,7 @@ class WindowsRegistryHandler:
         return self.__class__(
             subkey=subkey_parts,
             root_key=self._regpath.root_key,
-            permission=self._ll._permconf.permission,
+            permission=self._ll._permconf.permissions,
             wow64_32key_access=self._ll._permconf.wow64_32key_access,
         )
 

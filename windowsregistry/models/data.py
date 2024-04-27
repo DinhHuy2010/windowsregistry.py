@@ -18,7 +18,7 @@ class RegistryValue(NamedTuple):
     dtype: RegistryValueType
 
 class RegistryPermissionConfig(NamedTuple):
-    permission: RegistryKeyPermissionType
+    permissions: tuple[RegistryKeyPermissionType, ...]
     wow64_32key_access: bool
 
 class RegistrySize(NamedTuple):
