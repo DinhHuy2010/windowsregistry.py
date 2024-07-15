@@ -11,6 +11,33 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.pyright]
+typeCheckingMode = "strict"
+
+[tool.ruff.lint]
+# List of error codes to ignore
+# Select specific classes of rules to apply
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "ARG",
+    "SIM",
+    "PTH",
+    "PL"
+]
+ignore = [
+    "W291", # Trailing whitespace
+    "E501", # Line too long
+    "W293",  # Blank line contains whitespace
+    "PLR0912", # Too many branches
+    "PLR2004", # Magic values
+    "PLR0915", # Too many statements
+    "PLW0603" # Global statement
+]
 
 [build-system]
 requires = ["poetry-core"]
