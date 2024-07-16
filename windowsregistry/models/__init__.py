@@ -3,13 +3,13 @@ from .data import (
     RegistryPermissionConfig,
     RegistrySize,
     RegistryValue,
-    RegistryValueType,
 )
 from .enums import (
     OtherRegistryType,
     RegistryAlternateViewType,
     RegistryHKEYEnum,
     RegistryKeyPermissionType,
+    RegistryValueType,
 )
 
 __all__ = [
