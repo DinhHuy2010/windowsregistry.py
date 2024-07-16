@@ -72,6 +72,8 @@ class RegistryPathString:
 
     @property
     def name(self) -> str:
+        if not self.parts:
+            return self.root_key.name
         return self.parts[-1]
 
     def joinpath(self, *paths: str) -> "RegistryPathString":
