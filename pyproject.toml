@@ -11,8 +11,12 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.dev.dependencies]
+typing-extensions = "^4.12.2"
+
 [tool.pyright]
 typeCheckingMode = "strict"
+reportPrivateUsage = "none"
 
 [tool.ruff.lint]
 # List of error codes to ignore

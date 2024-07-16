@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Any, Iterable, Optional, Sequence, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
 
+from ._lowlevel import lowlevel
+from ._typings import RegistryKeyPermissionTypeArgs
 from .errors import WindowsRegistryError
 from .models import (
     RegistryHKEYEnum,
@@ -11,7 +13,6 @@ from .models import (
     RegistryPermissionConfig,
 )
 from .regpath import RegistryPathString
-from ._lowlevel import lowlevel
 
 if TYPE_CHECKING:
     from winreg import HKEYType
@@ -23,7 +24,7 @@ class WindowsRegistryHandler:
         subkey: Union[str, Sequence[str], None] = None,
         *,
         root_key: Optional[RegistryHKEYEnum] = None,
-        permission: Optional[Union[RegistryKeyPermissionType, Sequence[RegistryKeyPermissionType]]] = None,
+        permission: Optional[RegistryKeyPermissionTypeArgs] = None,
         wow64_32key_access: bool = False,
     ) -> None:
         if subkey is None:
@@ -37,8 +38,7 @@ class WindowsRegistryHandler:
         self._regpath = RegistryPathString(*subkey, root_key=root_key)
         self._ll = lowlevel(
             permconf=RegistryPermissionConfig(
-                permissions=tuple(permission),
-                wow64_32key_access=wow64_32key_access
+                permissions=tuple(permission), wow64_32key_access=wow64_32key_access
             )
         )
         self._winreg_handler = self._ll.open_subkey(
@@ -89,7 +89,7 @@ class WindowsRegistryHandler:
         try:
             self._ll.create_subkey(self.winreg_handler, subkey)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}")
+            raise WindowsRegistryError(f"error: {exc}") from None
 
     def delete_subkey_tree(self, subkey: str, recursive: bool):
         af = self._regpath.joinpath(subkey)
@@ -102,7 +102,7 @@ class WindowsRegistryHandler:
         try:
             self._ll.delete_subkey(self.winreg_handler, subkey)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}")
+            raise WindowsRegistryError(f"error: {exc}") from None
 
     def value_exists(self, name: str):
         try:
@@ -118,10 +118,10 @@ class WindowsRegistryHandler:
         try:
             self._ll.set_value(self.winreg_handler, name, dtype, data)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}")
+            raise WindowsRegistryError(f"error: {exc}") from None
 
     def delete_value(self, name: str) -> None:
         try:
             self._ll.delete_value(self._winreg_handler, name)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}")
+            raise WindowsRegistryError(f"error: {exc}") from None

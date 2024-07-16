@@ -1,15 +1,15 @@
-from .enums import (
-    RegistryHKEYEnum,
-    RegistryKeyPermissionType,
-    RegistryAlternateViewType,
-    OtherRegistryType
-)
 from .data import (
     RegistryInfoKey,
+    RegistryPermissionConfig,
+    RegistrySize,
     RegistryValue,
     RegistryValueType,
-    RegistryPermissionConfig,
-    RegistrySize
+)
+from .enums import (
+    OtherRegistryType,
+    RegistryAlternateViewType,
+    RegistryHKEYEnum,
+    RegistryKeyPermissionType,
 )
 
 __all__ = [
@@ -22,5 +22,5 @@ __all__ = [
     "OtherRegistryType",
     "RegistryInfoKey",
     "RegistryValue",
-    "RegistryValueType"
+    "RegistryValueType",
 ]

@@ -1,9 +1,7 @@
-from .models import RegistryPermissionConfig, RegistryAlternateViewType
+from .models import RegistryAlternateViewType, RegistryPermissionConfig
 
 
-def get_permission_int(
-    permconf: RegistryPermissionConfig
-) -> int:
+def get_permission_int(permconf: RegistryPermissionConfig) -> int:
     if permconf.wow64_32key_access:
         alttype = RegistryAlternateViewType.KEY_WOW64_32KEY
     else:

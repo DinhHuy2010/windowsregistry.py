@@ -16,5 +16,5 @@ __all__ = [
     "HKLM",
     "HKEY_CLASSES_ROOT",
     "HKEY_LOCAL_MACHINE",
-    "HKEY_CURRENT_USER"
+    "HKEY_CURRENT_USER",
 ]
