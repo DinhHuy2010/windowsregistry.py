@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
 
 from ._lowlevel import lowlevel
 from ._typings import RegistryKeyPermissionTypeArgs
-from .errors import WindowsRegistryError
+from .errors import OperationDataErrorKind, OperationError, OperationErrorKind
 from .models import (
     RegistryHKEYEnum,
     RegistryInfoKey,
@@ -65,9 +65,18 @@ class WindowsRegistryHandler:
                 permissions=tuple(permission), wow64_32key_access=wow64_32key_access
             )
         )
-        self._winreg_handler = self._ll.open_subkey(
-            self._regpath.root_key.value, self._regpath.path
-        )
+        try:
+            self._winreg_handler = self._ll.open_subkey(
+                self._regpath.root_key.value, self._regpath.path
+            )
+        except OSError as exc:
+            raise OperationError(
+                OperationErrorKind.ON_READ,
+                OperationDataErrorKind.SUBKEY,
+                f"fail to open {self._regpath.fullpath!r}",
+                exc,
+            ) from exc
+
         self._winreg_query = RegistryInfoKey(
             *self._ll.query_subkey(self._winreg_handler)
         )
@@ -113,20 +122,34 @@ class WindowsRegistryHandler:
         try:
             self._ll.create_subkey(self.winreg_handler, subkey)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}") from None
+            raise OperationError(
+                OperationErrorKind.ON_CREATE,
+                OperationDataErrorKind.SUBKEY,
+                f"fail to create subkey {subkey!r}",
+                exc,
+            ) from exc
 
     def delete_subkey_tree(self, subkey: str, recursive: bool):
         af = self._regpath.joinpath(subkey)
         af_handler = self.new_handler_from_path(af.parts)
         if af_handler.winreg_query.total_subkeys != 0:
             if not recursive:
-                raise WindowsRegistryError("subkey is not empty")
+                raise OperationError(
+                    OperationErrorKind.ON_DELETE,
+                    OperationDataErrorKind.SUBKEY,
+                    "subkey is not empty",
+                )
             for subaf in af_handler.itersubkeys():
                 af_handler.delete_subkey_tree(subaf, recursive=True)
         try:
             self._ll.delete_subkey(self.winreg_handler, subkey)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}") from None
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.SUBKEY,
+                f"fail to delete subkey {subkey!r}",
+                exc,
+            ) from exc
 
     def value_exists(self, name: str):
         try:
@@ -142,10 +165,24 @@ class WindowsRegistryHandler:
         try:
             self._ll.set_value(self.winreg_handler, name, dtype, data)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}") from None
+            if self.value_exists(name):
+                kind = OperationErrorKind.ON_UPDATE
+            else:
+                kind = OperationErrorKind.ON_CREATE
+            raise OperationError(
+                kind,
+                OperationDataErrorKind.VALUE,
+                f"fail to create/update value {name!r}",
+                exc,
+            ) from exc
 
     def delete_value(self, name: str) -> None:
         try:
             self._ll.delete_value(self._winreg_handler, name)
         except OSError as exc:
-            raise WindowsRegistryError(f"error: {exc}") from None
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.VALUE,
+                f"fail to delete value {name!r}",
+                exc,
+            ) from exc

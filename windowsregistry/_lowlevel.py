@@ -24,7 +24,6 @@
 
 from __future__ import annotations
 
-import winreg
 from typing import TYPE_CHECKING, Any
 
 from .models import RegistryPermissionConfig
@@ -32,6 +31,11 @@ from .utils import get_permission_int
 
 if TYPE_CHECKING:
     from winreg import _KeyType as _RegistryHandlerType
+
+try:
+    import winreg
+except ImportError as exc:
+    raise RuntimeError("not running on windows") from exc
 
 
 class lowlevel:

@@ -22,12 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Optional, Sequence
+from typing import Final, Optional, Sequence
 
-from .errors import WindowsRegistryError
+from .errors import RegistryPathError
 from .models import RegistryHKEYEnum
 
-REGISTRY_SEP = "\\"
+REGISTRY_SEP: Final[str] = "\\"
 
 
 def _determine_root_key(rk: str) -> RegistryHKEYEnum:
@@ -42,7 +42,7 @@ def _determine_root_key(rk: str) -> RegistryHKEYEnum:
     elif rk.startswith("HKEY_"):
         fullname = rk
     else:
-        raise WindowsRegistryError("root key not found")
+        raise RegistryPathError("root key not found")
     return getattr(RegistryHKEYEnum, fullname)
 
 

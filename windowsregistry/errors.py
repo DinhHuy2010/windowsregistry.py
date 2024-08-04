@@ -22,6 +22,59 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from enum import Enum, auto
+from typing import Optional
+
+
+class OperationErrorKind(Enum):
+    ON_CREATE = auto()
+    ON_READ = auto()
+    ON_UPDATE = auto()
+    ON_DELETE = auto()
+
+class OperationDataErrorKind(Enum):
+    SUBKEY = auto()
+    VALUE = auto()
+
+def _to_friendly_from_oek(oek: OperationErrorKind, odek: OperationDataErrorKind) -> str:
+    slugs = {
+        OperationErrorKind.ON_CREATE: "creating",
+        OperationErrorKind.ON_READ: "reading",
+        OperationErrorKind.ON_UPDATE: "updating",
+        OperationErrorKind.ON_DELETE: "deleting",
+    }
+    kinds = {
+        OperationDataErrorKind.SUBKEY: "subkey",
+        OperationDataErrorKind.VALUE: "value"
+    }
+    return f"on {slugs[oek]} {kinds[odek]}"
 
 class WindowsRegistryError(Exception):
     pass
+
+
+class OperationError(WindowsRegistryError):
+    def __init__(
+        self,
+        operation: OperationErrorKind,
+        kind: OperationDataErrorKind,
+        message: str,
+        exc: Optional[BaseException] = None,
+    ) -> None:
+        self.operation = operation
+        self.kind = kind
+        self.message = message
+        self.exc = exc
+
+    def __str__(self) -> str:
+        msg = f"error {_to_friendly_from_oek(self.operation, self.kind)}: {self.message}"
+        if self.exc:
+            msg += f" (from exception: {self.exc!r})"
+        return msg
+
+class RegistryPathError(WindowsRegistryError):
+    def __init__(self, message: str) -> None:
+        self.message = message
+    
+    def __str__(self) -> str:
+        return f"error on parsing path: {self.message}"

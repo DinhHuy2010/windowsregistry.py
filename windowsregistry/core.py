@@ -27,7 +27,12 @@ from typing import Any, Iterator, Optional, Sequence, Union
 
 from ._backend import WindowsRegistryHandler
 from ._typings import RegistryKeyPermissionTypeArgs
-from .errors import WindowsRegistryError
+from .errors import (
+    OperationDataErrorKind,
+    OperationError,
+    OperationErrorKind,
+    WindowsRegistryError,
+)
 from .models import (
     RegistryHKEYEnum,
     RegistryInfoKey,
@@ -58,14 +63,12 @@ class RegistryPath:
     def _sanargs(
         self, perm: Optional[RegistryKeyPermissionTypeArgs], w64: Optional[bool]
     ):
-        return (
-            (perm if perm is not None else self._backend._ll._permconf.permissions),
-            (
-                w64
-                if w64 is not None
-                else self._backend._ll._permconf.wow64_32key_access
-            ),
+        perm = perm if perm is not None else self._backend._ll._permconf.permissions
+        wow64_32key_access = (
+            w64 if w64 is not None else self._backend._ll._permconf.wow64_32key_access
         )
+
+        return perm, wow64_32key_access
 
     def _internal_open_subkey(
         self,
@@ -114,14 +117,22 @@ class RegistryPath:
         if self.subkey_exists(subkey):
             if exist_ok:
                 return self.open_subkey(subkey)
-            raise WindowsRegistryError(f"subkey {subkey!r} already exists")
+            raise OperationError(
+                OperationErrorKind.ON_CREATE,
+                OperationDataErrorKind.SUBKEY,
+                f"subkey {subkey!r} already exists"
+            )
 
         self._backend.new_subkey(subkey)
         return self.open_subkey(subkey)
 
     def delete_subkey(self, subkey: str, *, recursive: bool = False) -> None:
         if not self.subkey_exists(subkey):
-            raise WindowsRegistryError(f"subkey {subkey!r} does not exists")
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.SUBKEY,
+                f"subkey {subkey!r} does not exists"
+            )
         self._backend.delete_subkey_tree(subkey, recursive)
 
     def value_exists(self, name: str) -> bool:
@@ -140,14 +151,22 @@ class RegistryPath:
         self, name: str, data: Any, *, dtype: RegistryValueType, overwrite: bool = False
     ) -> RegistryValue:
         if self.value_exists(name) and not overwrite:
-            raise WindowsRegistryError(f"value name {name!r} already exists")
+            raise OperationError(
+                OperationErrorKind.ON_CREATE,
+                OperationDataErrorKind.VALUE,
+                f"value name {name!r} already exists"
+            )
 
         self._backend.set_value(name, dtype.value, data)
         return self.get_value(name)
 
     def delete_value(self, name: str) -> None:
         if not self.value_exists(name):
-            raise WindowsRegistryError(f"value name {name!r} does not exists")
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.VALUE,
+                f"value name {name!r} does not exists"
+            )
         self._backend.delete_value(name)
 
     def traverse(
