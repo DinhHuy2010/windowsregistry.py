@@ -22,6 +22,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from typing import Final
+
 from . import models
 from .core import RegistryPath, open_subkey
 from .errors import WindowsRegistryError
@@ -42,3 +44,5 @@ __all__ = [
     "HKEY_LOCAL_MACHINE",
     "HKEY_CURRENT_USER",
 ]
+
+__version__: Final[str] = "0.1.3"
