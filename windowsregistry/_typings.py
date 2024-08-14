@@ -22,29 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .data import (
-    RegistryInfoKey,
-    RegistryPermissionConfig,
-    RegistrySize,
-    RegistryValue,
-)
-from .enums import (
-    OtherRegistryType,
-    RegistryAlternateViewType,
-    RegistryHKEYEnum,
-    RegistryKeyPermissionType,
-    RegistryValueType,
-)
+from typing import Sequence, TypeAlias, Union
 
-__all__ = [
-    "RegistryHKEYEnum",
-    "RegistryKeyPermissionType",
-    "RegistryAlternateViewType",
-    "RegistryValueType",
-    "RegistryPermissionConfig",
-    "RegistrySize",
-    "OtherRegistryType",
-    "RegistryInfoKey",
-    "RegistryValue",
-    "RegistryValueType",
+from .models import RegistryKeyPermissionType
+
+RegistryKeyPermissionTypeArgs: TypeAlias = Union[
+    RegistryKeyPermissionType, Sequence[RegistryKeyPermissionType]
 ]

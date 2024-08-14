@@ -1,5 +1,5 @@
-from windowsregistry.regpath import RegistryPathString
 from windowsregistry.models.enums import RegistryHKEYEnum
+from windowsregistry.regpath import RegistryPathString
 
 # RegistryPathString(
 #     "HKEY_CURRENT_USER", "SOFTWARE", "Microsoft\\Windows"
@@ -14,8 +14,7 @@ from windowsregistry.models.enums import RegistryHKEYEnum
 #     "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows"
 # )
 hkcu_soft_mswin = RegistryPathString(
-    "SOFTWARE", "Microsoft", "Windows",
-    root_key=RegistryHKEYEnum.HKEY_CURRENT_USER
+    "SOFTWARE", "Microsoft", "Windows", root_key=RegistryHKEYEnum.HKEY_CURRENT_USER
 )
 print(hkcu_soft_mswin.parent)
 print(hkcu_soft_mswin.joinpath("CurrentVersion", "Run"))

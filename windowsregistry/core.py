@@ -1,18 +1,47 @@
+# This file is part of windowsregistry (https://github.com/DinhHuy2010/windowsregistry.py)
+#
+# MIT License
+#
+# Copyright (c) 2024 DinhHuy2010 (https://github.com/DinhHuy2010)
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from collections import deque
 from typing import Any, Iterator, Optional, Sequence, Union
 
-
-from .regpath import RegistryPathString
 from ._backend import WindowsRegistryHandler
-from .errors import WindowsRegistryError
+from ._typings import RegistryKeyPermissionTypeArgs
+from .errors import (
+    OperationDataErrorKind,
+    OperationError,
+    OperationErrorKind,
+    WindowsRegistryError,
+)
 from .models import (
     RegistryHKEYEnum,
+    RegistryInfoKey,
     RegistryKeyPermissionType,
+    RegistrySize,
     RegistryValue,
     RegistryValueType,
-    RegistryInfoKey,
-    RegistrySize
 )
+from .regpath import RegistryPathString
 
 
 class RegistryPath:
@@ -21,7 +50,7 @@ class RegistryPath:
         subkey: Union[None, str, Sequence[str]] = None,
         *,
         root_key: Optional[RegistryHKEYEnum] = None,
-        permission: Optional[RegistryKeyPermissionType] = None,
+        permission: Optional[RegistryKeyPermissionTypeArgs] = None,
         wow64_32key_access: bool = False,
     ) -> None:
         self._backend = WindowsRegistryHandler(
@@ -31,27 +60,25 @@ class RegistryPath:
             wow64_32key_access=wow64_32key_access,
         )
 
-    def _sanargs(self, perm, w64):
-        return (
-            (
-                perm
-                if perm is not None
-                else self._backend._ll._permconf.permissions
-            ),
-            (
-                w64
-                if w64 is not None
-                else self._backend._ll._permconf.wow64_32key_access
-            )
+    def _sanargs(
+        self, perm: Optional[RegistryKeyPermissionTypeArgs], w64: Optional[bool]
+    ):
+        perm = perm if perm is not None else self._backend._ll._permconf.permissions
+        wow64_32key_access = (
+            w64 if w64 is not None else self._backend._ll._permconf.wow64_32key_access
         )
-    
-    def _internal_open_subkey(self, r: RegistryPathString, perm=None, w64=None):
+
+        return perm, wow64_32key_access
+
+    def _internal_open_subkey(
+        self,
+        r: RegistryPathString,
+        perm: Optional[RegistryKeyPermissionTypeArgs] = None,
+        w64: Optional[bool] = None,
+    ):
         perm, w64 = self._sanargs(perm, w64)
         return self.__class__(
-            subkey=r.path,
-            root_key=r.root_key,
-            permission=perm,
-            wow64_32key_access=w64
+            subkey=r.path, root_key=r.root_key, permission=perm, wow64_32key_access=w64
         )
 
     @property
@@ -69,7 +96,7 @@ class RegistryPath:
     def open_subkey(
         self,
         *paths: str,
-        permission: Optional[RegistryKeyPermissionType] = None,
+        permission: Optional[RegistryKeyPermissionTypeArgs] = None,
         wow64_32key_access: Optional[bool] = None,
     ) -> "RegistryPath":
         return self._internal_open_subkey(
@@ -90,14 +117,22 @@ class RegistryPath:
         if self.subkey_exists(subkey):
             if exist_ok:
                 return self.open_subkey(subkey)
-            raise WindowsRegistryError(f"subkey {subkey!r} already exists")
+            raise OperationError(
+                OperationErrorKind.ON_CREATE,
+                OperationDataErrorKind.SUBKEY,
+                f"subkey {subkey!r} already exists"
+            )
 
         self._backend.new_subkey(subkey)
         return self.open_subkey(subkey)
 
     def delete_subkey(self, subkey: str, *, recursive: bool = False) -> None:
         if not self.subkey_exists(subkey):
-            raise WindowsRegistryError(f"subkey {subkey!r} does not exists")
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.SUBKEY,
+                f"subkey {subkey!r} does not exists"
+            )
         self._backend.delete_subkey_tree(subkey, recursive)
 
     def value_exists(self, name: str) -> bool:
@@ -116,14 +151,22 @@ class RegistryPath:
         self, name: str, data: Any, *, dtype: RegistryValueType, overwrite: bool = False
     ) -> RegistryValue:
         if self.value_exists(name) and not overwrite:
-            raise WindowsRegistryError(f"value name {name!r} already exists")
+            raise OperationError(
+                OperationErrorKind.ON_CREATE,
+                OperationDataErrorKind.VALUE,
+                f"value name {name!r} already exists"
+            )
 
         self._backend.set_value(name, dtype.value, data)
         return self.get_value(name)
 
     def delete_value(self, name: str) -> None:
         if not self.value_exists(name):
-            raise WindowsRegistryError(f"value name {name!r} does not exists")
+            raise OperationError(
+                OperationErrorKind.ON_DELETE,
+                OperationDataErrorKind.VALUE,
+                f"value name {name!r} does not exists"
+            )
         self._backend.delete_value(name)
 
     def traverse(
@@ -152,7 +195,9 @@ class RegistryPath:
         return final
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}: {self.regpath.fullpath} at {hex(id(self))}>"
+        return (
+            f"<{self.__class__.__name__}: {self.regpath.fullpath} at {hex(id(self))}>"
+        )
 
 
 def open_subkey(
