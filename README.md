@@ -23,7 +23,7 @@ reg_key = HKCU.open_subkey(r"Software\MyApp")
 
 # Check if a subkey exists
 if reg_key.subkey_exists("Settings"):
-	...
+    ...
 
 # Create a new subkey
 new_key = reg_key.create_subkey("NewSettings")
