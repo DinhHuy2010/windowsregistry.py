@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "windowsregistry"
-version = "0.1.3"
+version = "0.1.4"
 description = "Windows Registry Editor with Pythonic interface"
 authors = ["DinhHuy2010 <huy04052010@outlook.com>"]
 readme = "README.md"
@@ -9,14 +9,20 @@ homepage = "https://github.com/DinhHuy2010/windowsregistry.py"
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
-
-[tool.poetry.group.dev.dependencies]
+python = "^3.9"
 typing-extensions = "^4.12.2"
 
-[tool.pyright]
-typeCheckingMode = "strict"
-reportPrivateUsage = "none"
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+tox = "^4.20.0"
+ruff = "^0.6.7"
+pyright = "^1.1.382.post0"
+coverage = "^7.6.1"
+
+[tool.ruff]
+cache-dir = ".cache/ruff"
+indent-width = 4          # Force 4 spaces per indentation level
+line-length = 120         # Set maximum line length to 100 characters
 
 [tool.ruff.lint]
 # List of error codes to ignore
@@ -31,17 +37,70 @@ select = [
     "ARG",
     "SIM",
     "PTH",
-    "PL"
+    "PL",
+    "TID",
 ]
 ignore = [
-    "W291", # Trailing whitespace
-    "E501", # Line too long
-    "W293",  # Blank line contains whitespace
+    "W291",    # Trailing whitespace
+    "E501",    # Line too long
+    "W293",    # Blank line contains whitespace
     "PLR0912", # Too many branches
     "PLR2004", # Magic values
     "PLR0915", # Too many statements
-    "PLW0603" # Global statement
+    "PLW0603", # Global statement
+    "PLR0913", # Too many arguments
+    "B010",    # setattr
 ]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+banned-api."typing".msg = "Use typing_extensions instead"
+
+[tool.pyright]
+# strict for absoulte clean code™
+typeCheckingMode = "strict"
+
+[tool.pytest.ini_options]
+cache_dir = ".cache/pytest"
+addopts = "--verbose --import-mode importlib"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py{39,310,311}, pyright, ruff
+provision_tox_env = ".cache/tox"
+
+[testenv]
+description = "run tests"
+allowlist_externals = poetry
+commands_pre =
+    poetry install --no-root --sync
+commands = 
+    poetry run coverage run -m pytest
+    poetry run coverage report -m
+
+[testenv:pyright]
+basepython = python3.11
+description = "run pyright (type checking)"
+allowlist_externals = poetry
+commands_pre =
+    poetry install --no-root --sync
+commands:
+    poetry run pyright windowsregistry/
+
+[testenv:ruff]
+basepython = python3.11
+description = "run ruff (linting)"
+allowlist_externals = poetry
+commands_pre =
+    poetry install --no-root --sync
+commands:
+    poetry run ruff check windowsregistry/
+"""
 
 [build-system]
 requires = ["poetry-core"]
