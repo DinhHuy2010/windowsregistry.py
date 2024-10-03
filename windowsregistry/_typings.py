@@ -21,11 +21,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
-from typing import Sequence, TypeAlias, Union
+from typing_extensions import Sequence, TypeAlias, Union
 
-from .models import RegistryKeyPermissionType
+from windowsregistry.models import RegistryKeyPermissionType
 
-RegistryKeyPermissionTypeArgs: TypeAlias = Union[
-    RegistryKeyPermissionType, Sequence[RegistryKeyPermissionType]
-]
+RegistryKeyPermissionTypeArgs: TypeAlias = Union[RegistryKeyPermissionType, Sequence[RegistryKeyPermissionType]]

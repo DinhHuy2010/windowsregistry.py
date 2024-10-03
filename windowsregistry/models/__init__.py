@@ -21,14 +21,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
-from .data import (
-    RegistryInfoKey,
-    RegistryPermissionConfig,
-    RegistrySize,
-    RegistryValue,
-)
-from .enums import (
+from windowsregistry.models.data import RegistryInfoKey, RegistryPermissionConfig, RegistrySize, RegistryValue
+from windowsregistry.models.enums import (
     OtherRegistryType,
     RegistryAlternateViewType,
     RegistryHKEYEnum,

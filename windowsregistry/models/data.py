@@ -24,11 +24,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing_extensions import TYPE_CHECKING, Any, NamedTuple
 
 if TYPE_CHECKING:
-    from ..regpath import RegistryPathString
-    from .enums import RegistryKeyPermissionType, RegistryValueType
+    from windowsregistry.models.enums import RegistryKeyPermissionType, RegistryValueType
+    from windowsregistry.regpath import RegistryPathString
 
 
 class RegistryInfoKey(NamedTuple):

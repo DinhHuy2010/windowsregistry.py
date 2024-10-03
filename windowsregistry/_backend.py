@@ -25,18 +25,19 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
 
-from ._lowlevel import lowlevel
-from ._typings import RegistryKeyPermissionTypeArgs
-from .errors import OperationDataErrorKind, OperationError, OperationErrorKind
-from .models import (
+from typing_extensions import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
+
+from windowsregistry._lowlevel import lowlevel
+from windowsregistry._typings import RegistryKeyPermissionTypeArgs
+from windowsregistry.errors import OperationDataErrorKind, OperationError, OperationErrorKind
+from windowsregistry.models import (
     RegistryHKEYEnum,
     RegistryInfoKey,
     RegistryKeyPermissionType,
     RegistryPermissionConfig,
 )
-from .regpath import RegistryPathString
+from windowsregistry.regpath import RegistryPathString
 
 if TYPE_CHECKING:
     from winreg import HKEYType
@@ -59,27 +60,21 @@ class WindowsRegistryHandler:
             permission = RegistryKeyPermissionType.KEY_READ
         if isinstance(permission, RegistryKeyPermissionType):
             permission = [permission]
-        self._regpath = RegistryPathString(*subkey, root_key=root_key)
-        self._ll = lowlevel(
-            permconf=RegistryPermissionConfig(
-                permissions=tuple(permission), wow64_32key_access=wow64_32key_access
-            )
+        self.regpath = RegistryPathString(*subkey, root_key=root_key)
+        self.low_level = lowlevel(
+            permconf=RegistryPermissionConfig(permissions=tuple(permission), wow64_32key_access=wow64_32key_access)
         )
         try:
-            self._winreg_handler = self._ll.open_subkey(
-                self._regpath.root_key.value, self._regpath.path
-            )
+            self._winreg_handler = self.low_level.open_subkey(self.regpath.root_key.value, self.regpath.path)
         except OSError as exc:
             raise OperationError(
                 OperationErrorKind.ON_READ,
                 OperationDataErrorKind.SUBKEY,
-                f"fail to open {self._regpath.fullpath!r}",
+                f"fail to open {self.regpath.fullpath!r}",
                 exc,
             ) from exc
 
-        self._winreg_query = RegistryInfoKey(
-            *self._ll.query_subkey(self._winreg_handler)
-        )
+        self._winreg_query = RegistryInfoKey(*self.low_level.query_subkey(self._winreg_handler))
 
     @property
     def winreg_handler(self) -> "HKEYType":
@@ -91,36 +86,34 @@ class WindowsRegistryHandler:
 
     def itersubkeys(self) -> Iterable[str]:
         yield from map(
-            partial(self._ll.subkey_from_index, self.winreg_handler),
+            partial(self.low_level.subkey_from_index, self.winreg_handler),
             range(self.winreg_query.total_subkeys),
         )
 
     def itervalues(self) -> Iterable[tuple[str, Any, int]]:
         yield from map(
-            partial(self._ll.value_from_index, self.winreg_handler),
+            partial(self.low_level.value_from_index, self.winreg_handler),
             range(self.winreg_query.total_values),
         )
 
-    def new_handler_from_path(
-        self, subkey_parts: Sequence[str]
-    ) -> "WindowsRegistryHandler":
+    def new_handler_from_path(self, subkey_parts: Sequence[str]) -> "WindowsRegistryHandler":
         return self.__class__(
             subkey=subkey_parts,
-            root_key=self._regpath.root_key,
-            permission=self._ll._permconf.permissions,
-            wow64_32key_access=self._ll._permconf.wow64_32key_access,
+            root_key=self.regpath.root_key,
+            permission=self.low_level.permconf.permissions,
+            wow64_32key_access=self.low_level.permconf.wow64_32key_access,
         )
 
     def subkey_exists(self, subkey: str):
         try:
-            self._ll.open_subkey(self.winreg_handler, subkey)
+            self.low_level.open_subkey(self.winreg_handler, subkey)
             return True
         except OSError:
             return False
 
     def new_subkey(self, subkey: str):
         try:
-            self._ll.create_subkey(self.winreg_handler, subkey)
+            self.low_level.create_subkey(self.winreg_handler, subkey)
         except OSError as exc:
             raise OperationError(
                 OperationErrorKind.ON_CREATE,
@@ -130,7 +123,7 @@ class WindowsRegistryHandler:
             ) from exc
 
     def delete_subkey_tree(self, subkey: str, recursive: bool):
-        af = self._regpath.joinpath(subkey)
+        af = self.regpath.joinpath(subkey)
         af_handler = self.new_handler_from_path(af.parts)
         if af_handler.winreg_query.total_subkeys != 0:
             if not recursive:
@@ -142,7 +135,7 @@ class WindowsRegistryHandler:
             for subaf in af_handler.itersubkeys():
                 af_handler.delete_subkey_tree(subaf, recursive=True)
         try:
-            self._ll.delete_subkey(self.winreg_handler, subkey)
+            self.low_level.delete_subkey(self.winreg_handler, subkey)
         except OSError as exc:
             raise OperationError(
                 OperationErrorKind.ON_DELETE,
@@ -153,22 +146,27 @@ class WindowsRegistryHandler:
 
     def value_exists(self, name: str):
         try:
-            self._ll.query_value(self.winreg_handler, name)
+            self.low_level.query_value(self.winreg_handler, name)
             return True
         except OSError:
             return False
 
     def query_value(self, name: str) -> tuple[str, Any, int]:
-        return (name, *self._ll.query_value(self.winreg_handler, name))
+        try:
+            return (name, *self.low_level.query_value(self.winreg_handler, name))
+        except FileNotFoundError as e:
+            raise OperationError(
+                operation=OperationErrorKind.ON_READ,
+                kind=OperationDataErrorKind.VALUE,
+                message=f"value {name!r} not found",
+                exc=e,
+            ) from e
 
     def set_value(self, name: str, dtype: int, data: Any) -> None:
         try:
-            self._ll.set_value(self.winreg_handler, name, dtype, data)
+            self.low_level.set_value(self.winreg_handler, name, dtype, data)
         except OSError as exc:
-            if self.value_exists(name):
-                kind = OperationErrorKind.ON_UPDATE
-            else:
-                kind = OperationErrorKind.ON_CREATE
+            kind = OperationErrorKind.ON_UPDATE if self.value_exists(name) else OperationErrorKind.ON_CREATE
             raise OperationError(
                 kind,
                 OperationDataErrorKind.VALUE,
@@ -178,7 +176,7 @@ class WindowsRegistryHandler:
 
     def delete_value(self, name: str) -> None:
         try:
-            self._ll.delete_value(self._winreg_handler, name)
+            self.low_level.delete_value(self._winreg_handler, name)
         except OSError as exc:
             raise OperationError(
                 OperationErrorKind.ON_DELETE,

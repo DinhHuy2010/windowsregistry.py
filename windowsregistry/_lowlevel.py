@@ -24,24 +24,24 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing_extensions import TYPE_CHECKING, Any
 
-from .models import RegistryPermissionConfig
-from .utils import get_permission_int
-
-if TYPE_CHECKING:
-    from winreg import _KeyType as _RegistryHandlerType
+from windowsregistry.models import RegistryPermissionConfig
+from windowsregistry.utils import get_permission_int
 
 try:
     import winreg
 except ImportError as exc:
     raise RuntimeError("not running on windows") from exc
 
+if TYPE_CHECKING:
+    _RegistryHandlerType = winreg.HKEYType | int
+
 
 class lowlevel:
     def __init__(self, *, permconf: RegistryPermissionConfig) -> None:
-        self._permconf = permconf
-        self._access = get_permission_int(self._permconf)
+        self.permconf = permconf
+        self._access = get_permission_int(self.permconf)
 
     def open_subkey(self, handler: _RegistryHandlerType, path: str):
         return winreg.OpenKeyEx(handler, path, access=self._access)
@@ -61,15 +61,11 @@ class lowlevel:
     def query_value(self, handler: _RegistryHandlerType, name: str):
         return winreg.QueryValueEx(handler, name)
 
-    def set_value(
-        self, handler: _RegistryHandlerType, name: str, dtype: int, data: Any
-    ):
+    def set_value(self, handler: _RegistryHandlerType, name: str, dtype: int, data: Any):
         winreg.SetValueEx(handler, name, 0, dtype, data)
 
     def delete_value(self, handler: _RegistryHandlerType, name: str):
         winreg.DeleteValue(handler, name)
 
-    def value_from_index(
-        self, handler: _RegistryHandlerType, index: int
-    ) -> tuple[str, Any, int]:
+    def value_from_index(self, handler: _RegistryHandlerType, index: int) -> tuple[str, Any, int]:
         return winreg.EnumValue(handler, index)

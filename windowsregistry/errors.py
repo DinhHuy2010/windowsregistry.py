@@ -21,9 +21,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
 from enum import Enum, auto
-from typing import Optional
+
+from typing_extensions import Optional
 
 
 class OperationErrorKind(Enum):
@@ -32,9 +34,11 @@ class OperationErrorKind(Enum):
     ON_UPDATE = auto()
     ON_DELETE = auto()
 
+
 class OperationDataErrorKind(Enum):
     SUBKEY = auto()
     VALUE = auto()
+
 
 def _to_friendly_from_oek(oek: OperationErrorKind, odek: OperationDataErrorKind) -> str:
     slugs = {
@@ -43,11 +47,9 @@ def _to_friendly_from_oek(oek: OperationErrorKind, odek: OperationDataErrorKind)
         OperationErrorKind.ON_UPDATE: "updating",
         OperationErrorKind.ON_DELETE: "deleting",
     }
-    kinds = {
-        OperationDataErrorKind.SUBKEY: "subkey",
-        OperationDataErrorKind.VALUE: "value"
-    }
+    kinds = {OperationDataErrorKind.SUBKEY: "subkey", OperationDataErrorKind.VALUE: "value"}
     return f"on {slugs[oek]} {kinds[odek]}"
+
 
 class WindowsRegistryError(Exception):
     pass
@@ -72,9 +74,10 @@ class OperationError(WindowsRegistryError):
             msg += f" (from exception: {self.exc!r})"
         return msg
 
+
 class RegistryPathError(WindowsRegistryError):
     def __init__(self, message: str) -> None:
         self.message = message
-    
+
     def __str__(self) -> str:
         return f"error on parsing path: {self.message}"

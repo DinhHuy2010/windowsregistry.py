@@ -21,19 +21,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
 from collections import deque
-from typing import Any, Iterator, Optional, Sequence, Union
 
-from ._backend import WindowsRegistryHandler
-from ._typings import RegistryKeyPermissionTypeArgs
-from .errors import (
-    OperationDataErrorKind,
-    OperationError,
-    OperationErrorKind,
-    WindowsRegistryError,
-)
-from .models import (
+from typing_extensions import Any, Iterator, Optional, Sequence, Union
+
+from windowsregistry._backend import WindowsRegistryHandler
+from windowsregistry._typings import RegistryKeyPermissionTypeArgs
+from windowsregistry.errors import OperationDataErrorKind, OperationError, OperationErrorKind, WindowsRegistryError
+from windowsregistry.models import (
     RegistryHKEYEnum,
     RegistryInfoKey,
     RegistryKeyPermissionType,
@@ -41,7 +38,7 @@ from .models import (
     RegistryValue,
     RegistryValueType,
 )
-from .regpath import RegistryPathString
+from windowsregistry.regpath import RegistryPathString
 
 
 class RegistryPath:
@@ -60,13 +57,9 @@ class RegistryPath:
             wow64_32key_access=wow64_32key_access,
         )
 
-    def _sanargs(
-        self, perm: Optional[RegistryKeyPermissionTypeArgs], w64: Optional[bool]
-    ):
-        perm = perm if perm is not None else self._backend._ll._permconf.permissions
-        wow64_32key_access = (
-            w64 if w64 is not None else self._backend._ll._permconf.wow64_32key_access
-        )
+    def _sanargs(self, perm: Optional[RegistryKeyPermissionTypeArgs], w64: Optional[bool]):
+        perm = perm if perm is not None else self._backend.low_level.permconf.permissions
+        wow64_32key_access = w64 if w64 is not None else self._backend.low_level.permconf.wow64_32key_access
 
         return perm, wow64_32key_access
 
@@ -77,13 +70,11 @@ class RegistryPath:
         w64: Optional[bool] = None,
     ):
         perm, w64 = self._sanargs(perm, w64)
-        return self.__class__(
-            subkey=r.path, root_key=r.root_key, permission=perm, wow64_32key_access=w64
-        )
+        return self.__class__(subkey=r.path, root_key=r.root_key, permission=perm, wow64_32key_access=w64)
 
     @property
     def regpath(self) -> RegistryPathString:
-        return self._backend._regpath
+        return self._backend.regpath
 
     @property
     def query_info(self) -> RegistryInfoKey:
@@ -99,9 +90,7 @@ class RegistryPath:
         permission: Optional[RegistryKeyPermissionTypeArgs] = None,
         wow64_32key_access: Optional[bool] = None,
     ) -> "RegistryPath":
-        return self._internal_open_subkey(
-            self.regpath.joinpath(*paths), permission, wow64_32key_access
-        )
+        return self._internal_open_subkey(self.regpath.joinpath(*paths), permission, wow64_32key_access)
 
     def subkeys(self) -> Iterator["RegistryPath"]:
         for subkey in self._backend.itersubkeys():
@@ -118,9 +107,7 @@ class RegistryPath:
             if exist_ok:
                 return self.open_subkey(subkey)
             raise OperationError(
-                OperationErrorKind.ON_CREATE,
-                OperationDataErrorKind.SUBKEY,
-                f"subkey {subkey!r} already exists"
+                OperationErrorKind.ON_CREATE, OperationDataErrorKind.SUBKEY, f"subkey {subkey!r} already exists"
             )
 
         self._backend.new_subkey(subkey)
@@ -129,9 +116,7 @@ class RegistryPath:
     def delete_subkey(self, subkey: str, *, recursive: bool = False) -> None:
         if not self.subkey_exists(subkey):
             raise OperationError(
-                OperationErrorKind.ON_DELETE,
-                OperationDataErrorKind.SUBKEY,
-                f"subkey {subkey!r} does not exists"
+                OperationErrorKind.ON_DELETE, OperationDataErrorKind.SUBKEY, f"subkey {subkey!r} does not exists"
             )
         self._backend.delete_subkey_tree(subkey, recursive)
 
@@ -147,14 +132,10 @@ class RegistryPath:
         name, data, dtype = result
         return RegistryValue(name, data, RegistryValueType(dtype))
 
-    def set_value(
-        self, name: str, data: Any, *, dtype: RegistryValueType, overwrite: bool = False
-    ) -> RegistryValue:
+    def set_value(self, name: str, data: Any, *, dtype: RegistryValueType, overwrite: bool = False) -> RegistryValue:
         if self.value_exists(name) and not overwrite:
             raise OperationError(
-                OperationErrorKind.ON_CREATE,
-                OperationDataErrorKind.VALUE,
-                f"value name {name!r} already exists"
+                OperationErrorKind.ON_CREATE, OperationDataErrorKind.VALUE, f"value name {name!r} already exists"
             )
 
         self._backend.set_value(name, dtype.value, data)
@@ -163,17 +144,13 @@ class RegistryPath:
     def delete_value(self, name: str) -> None:
         if not self.value_exists(name):
             raise OperationError(
-                OperationErrorKind.ON_DELETE,
-                OperationDataErrorKind.VALUE,
-                f"value name {name!r} does not exists"
+                OperationErrorKind.ON_DELETE, OperationDataErrorKind.VALUE, f"value name {name!r} does not exists"
             )
         self._backend.delete_value(name)
 
     def traverse(
         self,
-    ) -> Iterator[
-        tuple["RegistryPath", tuple["RegistryPath", ...], tuple[RegistryValue, ...]]
-    ]:
+    ) -> Iterator[tuple["RegistryPath", tuple["RegistryPath", ...], tuple[RegistryValue, ...]]]:
         stacks: deque[RegistryPath] = deque([self])
         while stacks:
             curr = stacks.popleft()
@@ -195,9 +172,7 @@ class RegistryPath:
         return final
 
     def __repr__(self) -> str:
-        return (
-            f"<{self.__class__.__name__}: {self.regpath.fullpath} at {hex(id(self))}>"
-        )
+        return f"<{self.__class__.__name__}: {self.regpath.fullpath} at {hex(id(self))}>"
 
 
 def open_subkey(

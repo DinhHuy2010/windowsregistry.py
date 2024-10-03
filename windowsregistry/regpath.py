@@ -22,25 +22,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from typing import Final, Optional, Sequence
+from __future__ import annotations
 
-from .errors import RegistryPathError
-from .models import RegistryHKEYEnum
+import more_itertools as miter
+from typing_extensions import Final, Optional, Sequence
+
+from windowsregistry.errors import RegistryPathError
+from windowsregistry.models import RegistryHKEYEnum
 
 REGISTRY_SEP: Final[str] = "\\"
 
 
 def _determine_root_key(rk: str) -> RegistryHKEYEnum:
     rk = rk.upper()
-    if rk.startswith("HK"):
+    if rk.startswith("HKEY_"):
+        fullname = rk
+    elif rk.startswith("HK"):
         fullname = {
             "HKCR": "HKEY_CLASSES_ROOT",
             "HKCU": "HKEY_CURRENT_USER",
             "HKLM": "HKEY_LOCAL_MACHINE",
             "HKU": "HKEY_USERS",
         }[rk]
-    elif rk.startswith("HKEY_"):
-        fullname = rk
     else:
         raise RegistryPathError("root key not found")
     return getattr(RegistryHKEYEnum, fullname)
@@ -50,7 +53,7 @@ def _parse_parts(paths: Sequence[str]) -> tuple[str, ...]:
     r: list[str] = []
     ps = tuple(paths)
     for p in ps:
-        r.extend(p.split(REGISTRY_SEP))
+        r.extend("".join(s) for s in miter.split_at(p, pred=lambda x: x in r"\/"))
     return tuple(r)
 
 
@@ -66,9 +69,7 @@ def _parse_paths(
 
 
 class RegistryPathString:
-    def __init__(
-        self, *paths: str, root_key: Optional[RegistryHKEYEnum] = None
-    ) -> None:
+    def __init__(self, *paths: str, root_key: Optional[RegistryHKEYEnum] = None) -> None:
         parts, rk = _parse_paths(paths, root_key)
         self._root_key = rk
         self._parts = parts

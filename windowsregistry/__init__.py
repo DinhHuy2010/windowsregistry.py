@@ -21,16 +21,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from __future__ import annotations
 
-from typing import Final
+from typing_extensions import Final
 
-from . import models
-from .core import RegistryPath, open_subkey
-from .errors import WindowsRegistryError
+from windowsregistry import models
+from windowsregistry.core import RegistryPath, open_subkey
+from windowsregistry.errors import WindowsRegistryError
 
-HKCR = HKEY_CLASSES_ROOT = open_subkey("HKCR")
-HKCU = HKEY_CURRENT_USER = open_subkey("HKCU")
-HKLM = HKEY_LOCAL_MACHINE = open_subkey("HKLM")
+HKEY_CLASSES_ROOT: Final[RegistryPath] = open_subkey("HKCR")
+HKEY_CURRENT_USER: Final[RegistryPath] = open_subkey("HKCU")
+HKEY_LOCAL_MACHINE: Final[RegistryPath] = open_subkey("HKLM")
+HKCR: Final[RegistryPath] = HKEY_CLASSES_ROOT
+HKCU: Final[RegistryPath] = HKEY_CURRENT_USER
+HKLM: Final[RegistryPath] = HKEY_LOCAL_MACHINE
 
 __all__ = [
     "models",
