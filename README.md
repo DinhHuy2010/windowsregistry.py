@@ -19,7 +19,7 @@ from windowsregistry import HKCU
 from windowsregistry.models import RegistryValueType
 
 # Open a registry key
-reg_key = HKCU.open_subkey("Software\\MyApp")
+reg_key = HKCU.open_subkey(r"Software\MyApp")
 
 # Check if a subkey exists
 if reg_key.subkey_exists("Settings"):
